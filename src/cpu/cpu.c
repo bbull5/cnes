@@ -34,11 +34,36 @@ void cpu_print_state(const CPU *cpu) {
            (cpu->P & FLAG_CARRY) ? 'C' : '.');
 }
 
+// void cpu_step(CPU *cpu) {
+//     uint8_t opcode = bus_read(cpu->PC++);
+//     Opcode inst = instruction_table[opcode];
+
+//     // Execute instruction
+//     inst.execute(cpu, inst.mode);
+//     cpu->cycles += inst.cycles;
+// }
+
 void cpu_step(CPU *cpu) {
     uint8_t opcode = bus_read(cpu->PC++);
     Opcode inst = instruction_table[opcode];
+    uint16_t base = 0, effective = 0;
 
-    // Execute instruction
+    if (inst.add_cycle_on_page_cross) {
+        // Peek ahead without mutating actual PC
+        uint16_t saved_pc = cpu->PC;
+
+        AddressResolution ar = resolve_address_with_base(cpu, inst.mode);
+        base = ar.base;
+        effective = ar.effective;
+
+        cpu->PC = saved_pc;
+    }
+
     inst.execute(cpu, inst.mode);
     cpu->cycles += inst.cycles;
+
+    // Page cross penalty
+    if (inst.add_cycle_on_page_cross && ((base & 0xFF00) != (effective & 0xFF00))) {
+        cpu->cycles++;
+    }
 }

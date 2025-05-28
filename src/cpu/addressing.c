@@ -117,9 +117,10 @@ uint8_t fetch_operand(CPU *cpu, AddressingMode mode) {
         case ADDR_IMMEDIATE:
             return bus_read(cpu->PC++);
 
-        case ADDR_ZEROPAGE:
+        case ADDR_ZEROPAGE: {
             uint8_t addr = bus_read(cpu->PC++);
             return bus_read(addr);
+        }
 
         case ADDR_ZEROPAGE_X: {
             uint8_t base = bus_read(cpu->PC++);
