@@ -77,6 +77,41 @@ uint16_t resolve_address(CPU *cpu, AddressingMode mode) {
     }
 }
 
+AddressResolution resolve_address_with_base(CPU *cpu, AddressingMode mode) {
+    AddressResolution result = {0};
+
+    switch (mode) {
+        case ADDR_ABSOLUTE_X: {
+            uint16_t base = read_pc_word(cpu);
+            result.base = base;
+            result.effective = base + cpu->X;
+            break;
+        }
+
+        case ADDR_ABSOLUTE_Y: {
+            uint16_t base = read_pc_word(cpu);
+            result.base = base;
+            result.effective = base + cpu->Y;
+            break;
+        }
+
+        case ADDR_INDIRECT_Y: {
+            uint8_t zp = read_pc_byte(cpu);
+            uint8_t low = bus_read(zp);
+            uint8_t high = bus_read((zp + 1) & 0xFF);
+            uint16_t base = (high << 8) | low;
+            result.base = base;
+            result.effective = base + cpu->Y;
+            break;
+        }
+
+        default:
+            result.base = result.effective = resolve_address(cpu, mode);
+    }
+
+    return result;
+}
+
 uint8_t fetch_operand(CPU *cpu, AddressingMode mode) {
     switch (mode) {
         case ADDR_IMMEDIATE:
@@ -122,11 +157,10 @@ uint8_t fetch_operand(CPU *cpu, AddressingMode mode) {
         }
 
         case ADDR_INDIRECT_X: {
-            uint8_t zp = bus_read(cpu->PC++);
-            uint8_t low = bus_read(zp);
-            uint8_t high = bus_read((zp + 1) & 0xFF);
-            uint16_t base = (high << 8) | low;
-            uint16_t addr = base + cpu->X;
+            uint8_t zp_addr = (bus_read(cpu->PC++) + cpu->X) & 0xFF;
+            uint8_t low = bus_read(zp_addr);
+            uint8_t high = bus_read((zp_addr + 1) & 0xFF);
+            uint16_t addr = (high << 8) | low;
             return bus_read(addr);
         }
 

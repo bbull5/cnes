@@ -21,8 +21,14 @@ typedef enum {
     ADDR_IMPLIED
 } AddressingMode;
 
+typedef struct {
+    uint16_t    base;
+    uint16_t    effective;
+} AddressResolution;
+
 
 uint16_t resolve_address(CPU *cpu, AddressingMode mode);
+AddressResolution resolve_address_with_base(CPU *cpu, AddressingMode mode);
 uint8_t fetch_operand(CPU *cpu, AddressingMode mode);
 
 #endif

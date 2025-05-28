@@ -32,7 +32,7 @@ static void set_zn_flags(CPU *cpu, uint8_t value) {
 */
 
 void adc(CPU *cpu, AddressingMode mode) {
-    uint16_t prev_pc = cpu->PC;
+    AddressResolution ar = resolve_address_with_base(cpu, mode);
     uint8_t operand = fetch_operand(cpu, mode);
     uint16_t sum = cpu->A + operand + (cpu->P & FLAG_CARRY ? 1 : 0);
 
@@ -56,9 +56,7 @@ void adc(CPU *cpu, AddressingMode mode) {
     set_zn_flags(cpu, cpu->A);
 
     // Page cross penalty
-    if (mode == ADDR_ABSOLUTE_X || mode == ADDR_ABSOLUTE_Y || mode == ADDR_INDIRECT_Y) {
-        if ((prev_pc & 0xFF00) != (cpu->PC & 0xFF00)) {
-            cpu->cycles += 1;
-        }
+    if ((ar.base & 0xFF00) != (ar.effective & 0xFF00) && (mode == ADDR_ABSOLUTE_X || mode == ADDR_ABSOLUTE_Y || mode == ADDR_INDIRECT_Y)) {
+        cpu->cycles++;
     }
 }
